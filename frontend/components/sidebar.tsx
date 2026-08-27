@@ -11,7 +11,7 @@ function MenuItem({ item }: { item: any }) {
   const hasChildren = !!item.children?.length
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton render={hasChildren ? <button type="button" /> : <Link href={item.href || "#"} />}>
+      <SidebarMenuButton className="text-[15px]" render={hasChildren ? <button type="button" /> : <Link href={item.href || "#"} />}>
         {Icon ? <Icon /> : null}
         <span className="flex-1">{item.label}</span>
         {hasChildren && <ChevronRight className="ml-auto h-4 w-4 opacity-60" />}
@@ -22,7 +22,7 @@ function MenuItem({ item }: { item: any }) {
             const ChildIcon = iconMap[child.icon]
             return (
               <SidebarMenuSubItem key={child.label}>
-                <SidebarMenuSubButton render={<Link href={child.href || "#"} />}>
+                <SidebarMenuSubButton className="text-[14px]" render={<Link href={child.href || "#"} />}>
                   {ChildIcon ? <ChildIcon /> : null}
                   {child.label}
                 </SidebarMenuSubButton>
