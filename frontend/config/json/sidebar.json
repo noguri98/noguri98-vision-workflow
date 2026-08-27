@@ -1,0 +1,7 @@
+[
+  { "label": "홈", "href": "/", "icon": "Home" },
+  { "label": "라벨", "href": "/label", "icon": "Tag", "children": [
+    { "label": "라벨링", "href": "/label/labeling", "icon": "Edit" },
+    { "label": "클래스", "href": "/label/class", "icon": "Layers" }
+  ]}
+]
