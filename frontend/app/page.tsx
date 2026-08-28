@@ -45,13 +45,14 @@ export default function Home() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
+<Image
+               className="dark:invert h-[14px] w-4"
+               src="/vercel.svg"
+               alt="Vercel logomark"
+               width={16}
+               height={14}
+               style={{ width: 'auto' }}
+             />
             Deploy Now
           </a>
           <a
