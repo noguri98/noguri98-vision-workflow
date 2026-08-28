@@ -37,7 +37,7 @@ function MenuItem({ item }: { item: any }) {
 
 export default function Sidebar() {
   return (
-    <UISidebar collapsible="offcanvas">
+    <UISidebar collapsible="icon">
       <SidebarHeader />
       <SidebarContent>
         <SidebarGroup>
