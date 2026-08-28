@@ -11,8 +11,14 @@ interface BBox {
   yMax: number
 }
 
+interface ImageFile {
+  name: string
+  type: string
+  url?: string
+}
+
 interface LabelInfoProps {
-  currentFile: File | null
+  currentFile: ImageFile | null
   imageFilesCount: number
   bboxes: BBox[]
   selectedClass: string
@@ -21,12 +27,13 @@ interface LabelInfoProps {
   setClasses: (classes: string[]) => void
   onDeleteBbox: (id: string) => void
   imageSizes: Record<string, { width: number, height: number }>
-  onSelectFolderClick: () => void
+  imagesDir: string
+  onSetImagesDir: (path: string) => void
+  onDeleteImagesDir: () => void
   onExportCOCO: () => void
-  saveDirHandle: FileSystemDirectoryHandle | null
-  onSelectSaveDir: () => void
   isSaving: boolean
   lastSaved: Date | null
+  onRefreshImages: () => void
 }
 
 // Generate circular colors next to class labels
@@ -68,14 +75,16 @@ export default function LabelInfo({
   setClasses,
   onDeleteBbox,
   imageSizes,
-  onSelectFolderClick,
+  imagesDir,
+  onSetImagesDir,
+  onDeleteImagesDir,
   onExportCOCO,
-  saveDirHandle,
-  onSelectSaveDir,
   isSaving,
-  lastSaved
+  lastSaved,
+  onRefreshImages
 }: LabelInfoProps) {
   const [newClassInput, setNewClassInput] = useState("")
+  const [dirInput, setDirInput] = useState(imagesDir)
 
   const hasFiles = currentFile !== null
 
@@ -88,15 +97,24 @@ export default function LabelInfo({
           </svg>
         </div>
         <div>
-          <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">불러온 이미지가 없습니다</p>
-          <p className="text-xs text-muted-foreground mt-1">폴더 변경 단추를 클릭하거나 새 폴더를 선택하십시오.</p>
+          <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">이미지가 없습니다</p>
+          <p className="text-xs text-muted-foreground mt-1">아래에 이미지 디렉토리 경로를 입력하고 적용 버튼을 클릭하세요.</p>
         </div>
-        <button
-          onClick={onSelectFolderClick}
-          className="inline-flex items-center justify-center rounded-lg bg-zinc-900 hover:bg-zinc-800 px-4 py-2 text-xs font-semibold text-zinc-50 dark:bg-zinc-50 dark:hover:bg-zinc-100 dark:text-zinc-955 cursor-pointer shadow transition-all duration-200"
-        >
-          폴더 선택하기
-        </button>
+        <div className="flex gap-2 w-full max-w-md">
+          <input
+            type="text"
+            value={dirInput}
+            onChange={(e) => setDirInput(e.target.value)}
+            className="flex-1 h-9 rounded-lg border border-zinc-250 dark:border-zinc-800 bg-background px-3 py-1.5 text-xs shadow-sm placeholder:text-zinc-400 transition-colors focus-visible:outline-none focus:border-zinc-450 dark:focus:border-zinc-700"
+            placeholder="/path/to/images"
+          />
+          <button
+            onClick={() => onSetImagesDir(dirInput)}
+            className="inline-flex items-center justify-center rounded-lg bg-zinc-900 hover:bg-zinc-800 px-4 py-2 text-xs font-semibold text-zinc-50 dark:bg-zinc-50 dark:hover:bg-zinc-100 dark:text-zinc-955 cursor-pointer shadow transition-all duration-200"
+          >
+            적용
+          </button>
+        </div>
       </div>
     )
   }
@@ -130,16 +148,42 @@ export default function LabelInfo({
             </div>
           </div>
           
-          <div>
-            <button
-              onClick={onSelectFolderClick}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-background hover:bg-zinc-50 px-3.5 py-2 text-xs font-bold text-zinc-700 dark:border-zinc-750 dark:bg-zinc-900/30 dark:hover:bg-zinc-900 dark:text-zinc-300 cursor-pointer transition-colors shadow-sm"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-              </svg>
-              폴더 변경
-            </button>
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">이미지 디렉토리</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={dirInput}
+                onChange={(e) => setDirInput(e.target.value)}
+                className="flex-1 h-8 rounded-lg border border-zinc-250 dark:border-zinc-800 bg-background px-3 py-1.5 text-xs shadow-sm placeholder:text-zinc-400 transition-colors focus-visible:outline-none focus:border-zinc-450 dark:focus:border-zinc-700"
+                placeholder="/path/to/images"
+              />
+              <button
+                onClick={() => onSetImagesDir(dirInput)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-background hover:bg-zinc-50 px-3 py-1.5 text-xs font-bold text-zinc-700 dark:border-zinc-750 dark:bg-zinc-900/30 dark:hover:bg-zinc-900 dark:text-zinc-300 cursor-pointer transition-colors shadow-sm whitespace-nowrap"
+              >
+                적용
+              </button>
+              <button
+                onClick={onRefreshImages}
+                className="inline-flex items-center justify-center rounded-lg border border-zinc-300 bg-background hover:bg-zinc-50 w-8 h-8 text-zinc-700 dark:border-zinc-750 dark:bg-zinc-900/30 dark:hover:bg-zinc-900 dark:text-zinc-300 cursor-pointer transition-colors shadow-sm"
+                title="새로고침"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <button
+                onClick={onDeleteImagesDir}
+                className="inline-flex items-center justify-center rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 w-8 h-8 text-red-600 dark:border-red-700 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400 cursor-pointer transition-colors shadow-sm"
+                title="디렉토리 설정 초기화"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+            <p className="text-[10px] text-zinc-400 mt-1">현재: {imagesDir}</p>
           </div>
         </div>
 
@@ -237,33 +281,23 @@ export default function LabelInfo({
 
       {/* Save Section */}
       <div className="space-y-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">저장 설정</h3>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">저장</h3>
         <div className="flex items-center gap-3">
-          <button
-            onClick={onSelectSaveDir}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-background hover:bg-zinc-50 px-3.5 py-2 text-xs font-bold text-zinc-700 dark:border-zinc-750 dark:bg-zinc-900/30 dark:hover:bg-zinc-900 dark:text-zinc-300 cursor-pointer transition-colors shadow-sm"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-            </svg>
-            {saveDirHandle ? '저장 위치 변경' : '저장 위치 선택'}
-          </button>
-          
-          {saveDirHandle && (
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-              {isSaving ? (
-                <span className="flex items-center gap-1">
-                  <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  저장 중...
-                </span>
-              ) : lastSaved ? (
-                <span>마지막 저장: {lastSaved.toLocaleTimeString()}</span>
-              ) : null}
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-xs text-zinc-500">
+            {isSaving ? (
+              <span className="flex items-center gap-1">
+                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                저장 중...
+              </span>
+            ) : lastSaved ? (
+              <span>자동 저장됨: {lastSaved.toLocaleTimeString()}</span>
+            ) : (
+              <span className="text-zinc-400">변경 시 자동 저장</span>
+            )}
+          </div>
         </div>
         
         <button
@@ -273,7 +307,7 @@ export default function LabelInfo({
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
-          JSON 다운로드
+          COCO JSON 다운로드
         </button>
       </div>
     </div>

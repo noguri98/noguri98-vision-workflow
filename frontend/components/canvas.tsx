@@ -18,8 +18,14 @@ interface ImageRect {
   top: number
 }
 
+interface ImageFile {
+  name: string
+  type: string
+  url?: string
+}
+
 interface CanvasProps {
-  currentFile: File | null
+  currentFile: ImageFile | null
   imageFilesCount: number
   selectedIdx: number
   bboxes: BBox[]
@@ -29,7 +35,6 @@ interface CanvasProps {
   onPrevImage: () => void
   onAddBbox: (box: Omit<BBox, 'id'>) => void
   onImageSizeLoaded: (width: number, height: number) => void
-  onSelectFolderClick: () => void
 }
 
 export default function Canvas({
@@ -42,8 +47,7 @@ export default function Canvas({
   onNextImage,
   onPrevImage,
   onAddBbox,
-  onImageSizeLoaded,
-  onSelectFolderClick
+  onImageSizeLoaded
 }: CanvasProps) {
   const imgRef = useRef<HTMLImageElement>(null)
   const [imageRect, setImageRect] = useState<ImageRect | null>(null)
@@ -106,7 +110,16 @@ export default function Canvas({
       setImageRect(null)
       return
     }
-    const url = URL.createObjectURL(currentFile)
+
+    // If URL is provided (backend), use it directly
+    if (currentFile.url) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSrc(currentFile.url)
+      return
+    }
+
+    // Otherwise create from File object (legacy/local)
+    const url = URL.createObjectURL(currentFile as unknown as File)
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSrc(url)
     return () => URL.revokeObjectURL(url)
@@ -214,9 +227,9 @@ export default function Canvas({
       {/* Main Canvas view with interactive drawing overlay */}
       <div className={`relative flex-1 flex items-center justify-center overflow-hidden bg-zinc-950/5 dark:bg-zinc-100/5 p-4 ${!hasFiles ? 'min-h-[400px] border border-dashed border-zinc-305 m-4 rounded-lg' : ''}`}>
         {!hasFiles ? (
-          <div className="text-center space-y-3 p-8 cursor-pointer" onClick={onSelectFolderClick}>
-            <div className="text-muted-foreground">파일을 선택해주세요</div>
-            <div className="text-xs text-muted-foreground">클릭하여 폴더 선택</div>
+          <div className="text-center space-y-3 p-8">
+            <div className="text-muted-foreground">이미지가 없습니다</div>
+            <div className="text-xs text-muted-foreground">오른쪽 패널에서 이미지 디렉토리를 설정하세요</div>
           </div>
         ) : src ? (
           <div className="relative max-w-full max-h-[80vh] flex items-center justify-center">
@@ -280,19 +293,7 @@ export default function Canvas({
       </div>
 
       {/* Footer */}
-      <div className="border-t border-zinc-300 bg-muted/40 px-3 py-2 text-xs text-muted-foreground flex items-center justify-between">
-        <div>
-          {hasFiles ? (
-            <button
-              onClick={onSelectFolderClick}
-              className="text-zinc-660 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium cursor-pointer transition-colors"
-            >
-              폴더 변경...
-            </button>
-          ) : (
-            <span className="text-zinc-400">선택된 폴더 없음</span>
-          )}
-        </div>
+      <div className="border-t border-zinc-300 bg-muted/40 px-3 py-2 text-xs text-muted-foreground flex items-center justify-end">
         <div className="flex items-center gap-4">
           <span className="hidden sm:inline text-[11px] text-zinc-400">단축키:</span>
           <div className="flex items-center gap-1.5">
