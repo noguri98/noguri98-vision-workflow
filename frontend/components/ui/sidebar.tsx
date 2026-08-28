@@ -31,6 +31,7 @@ const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+const SIDEBAR_COLLAPSE_BREAKPOINT = 1265
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed"
@@ -108,6 +109,21 @@ function SidebarProvider({
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [toggleSidebar])
+
+  // Auto-collapse sidebar when window width is below breakpoint
+  React.useEffect(() => {
+    if (isMobile) return
+
+    const handleResize = () => {
+      if (window.innerWidth < SIDEBAR_COLLAPSE_BREAKPOINT && open) {
+        setOpen(false)
+      }
+    }
+
+    window.addEventListener("resize", handleResize)
+    handleResize()
+    return () => window.removeEventListener("resize", handleResize)
+  }, [isMobile, open, setOpen])
 
   // We add a state so that we can do data-state="expanded" or "collapsed".
   // This makes it easier to style the sidebar with Tailwind classes.
